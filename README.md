@@ -1,4 +1,4 @@
-### HEIRARCHICAL PARTITION KEYS IN GO, using CosmosDB
+### HEIRARCHICAL PARTITION KEYS IN GO. Database partitioning with CosmosDB
 
 #### USECASES
 
