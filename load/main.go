@@ -44,11 +44,11 @@ var tenantTypes = []struct {
 	userMax  int
 	sessions int
 }{
-	{"Global-Corp", 2000, 10000, 100},     // Very large enterprise
-	{"Enterprise-Corp", 1000, 5000, 50},   // large enterprise
-	{"RegionalHolding-LLP", 100, 500, 20}, // Mid-market company
-	{"TechStartup-Co", 50, 200, 30},       // Growing startup
-	{"LocalShops-SME", 10, 50, 5},         // Small business
+	{"Global-Corp", 2000, 10000, 100},   // Very large enterprise
+	{"Enterprise-Corp", 1000, 5000, 50}, // large enterprise
+	{"MidMarket-Inc", 100, 500, 20},     // Mid-market company
+	{"TechStartup-Co", 50, 200, 30},     // Growing startup
+	{"LocalShops-SME", 10, 50, 5},       // Small business
 }
 
 // sample activities for realistic data generation
@@ -169,11 +169,11 @@ func ensureDatabaseAndContainer(client *azcosmos.Client, databaseName, container
 
 	fmt.Printf("Checking if container %s exists...\n", containerName)
 
-	// Define heirarchucal partition key definition
-	// this creates a 3-level heirarchy: /tennatId, /userId, /sessionId
+	// Define hierarchical partition key definition
+	// this creates a 3-level hierarchy: /tennatId, /userId, /sessionId
 	partitionKeyDef := azcosmos.PartitionKeyDefinition{
 		Kind:    azcosmos.PartitionKeyKindMultiHash,
-		Version: 2, //ver 2 is required for heirarchical partition keys
+		Version: 2, //ver 2 is required for hierarchical partition keys
 		Paths: []string{
 			"/tenantId",  // Level 1: Tenant isolation
 			"/userId",    // Level 2: User Distribution
@@ -237,7 +237,7 @@ func loadSampleData(containerClient *azcosmos.ContainerClient, rowCount int) err
 			continue
 		}
 
-		// create heirarchical partition key (TenantID, UserID, SessionID)
+		// create hierarchical partition key (TenantID, UserID, SessionID)
 		partitionKey := azcosmos.NewPartitionKeyString(session.TenantID).AppendString(session.UserID).AppendString(session.SessionID)
 
 		// insert the record using UpsertItem (insert or update if exists)
