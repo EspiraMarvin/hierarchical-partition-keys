@@ -49,6 +49,11 @@ func main() {
 	userID := "user-192"
 	sessionID := "session-5af6ab47"
 	queryWithFullPartitionKey(tenantID, userID, sessionID)
+
+	// Query with a partial partition key
+	_tenantID := "LocalShops-SME"
+	_userID := "user-42"
+	queryWithTenantAndUserID(_tenantID, _userID)
 }
 
 // queryWithFullPartitionKey let`s you user the full partition key for querying
@@ -84,6 +89,46 @@ func queryWithFullPartitionKey(tenantID, userID, sessionID string) {
 			fmt.Println("Timestamp", queryResult.Timestamp)
 
 			fmt.Println("RUs consumed", page.RequestCharge)
+		}
+	}
+}
+
+// queryWithTenantAndUserID lets you query with tenantId and userId
+func queryWithTenantAndUserID(tenantID, userID string) {
+	query := "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId"
+
+	// since we don't have the full partition key, we use an empty partition key
+	emptyPartitionKey := azcosmos.NewPartitionKey()
+
+	page := container.NewQueryItemsPager(query, emptyPartitionKey, &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@tenantId", Value: tenantID},
+			{Name: "@userId", Value: userID},
+		},
+	})
+	for page.More() {
+		page, err := page.NextPage(context.Background())
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("Results for tenantId:", tenantID, "and userId:", userID)
+		fmt.Println("==========================================")
+
+		for _, _item := range page.Items {
+			var queryResult QueryResult
+			err = json.Unmarshal(_item, &queryResult)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println("Session ID:", queryResult.SessionId)
+			fmt.Println("Activity:", queryResult.Activity)
+			fmt.Println("Timestamp:", queryResult.Timestamp)
+
+			fmt.Println("RUs consumed:", page.RequestCharge)
+
+			fmt.Println("==========================================")
 		}
 	}
 }
