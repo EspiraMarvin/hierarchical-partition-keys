@@ -53,7 +53,13 @@ func main() {
 	// Query with a partial partition key
 	_tenantID := "LocalShops-SME"
 	_userID := "user-42"
+	// partial key
 	queryWithTenantAndUserID(_tenantID, _userID)
+
+	// Query with a single partition key parameter
+	queryWithSinglePKParameter("tenantId", "Enterprise-Corp")
+	queryWithSinglePKParameter("userId", "user-42")
+	queryWithSinglePKParameter("sessionId", "session-0361ef4c")
 }
 
 // queryWithFullPartitionKey let`s you user the full partition key for querying
@@ -93,7 +99,7 @@ func queryWithFullPartitionKey(tenantID, userID, sessionID string) {
 	}
 }
 
-// queryWithTenantAndUserID lets you query with tenantId and userId
+// queryWithTenantAndUserID lets you query with partial key, tenantId and userId
 func queryWithTenantAndUserID(tenantID, userID string) {
 	query := "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.userId = @userId"
 
@@ -122,6 +128,49 @@ func queryWithTenantAndUserID(tenantID, userID string) {
 				log.Fatal(err)
 			}
 
+			fmt.Println("Session ID:", queryResult.SessionId)
+			fmt.Println("Activity:", queryResult.Activity)
+			fmt.Println("Timestamp:", queryResult.Timestamp)
+
+			fmt.Println("RUs consumed:", page.RequestCharge)
+
+			fmt.Println("==========================================")
+		}
+	}
+}
+
+func queryWithSinglePKParameter(paramType, paramValue string) {
+	if paramType != "tenantId" && paramType != "userId" && paramType != "sessionId" {
+		log.Fatalf("Invalid parameter type: %s", paramType)
+	}
+
+	query := fmt.Sprintf("SELECT * FROM c WHERE c.%s = @param", paramType)
+	emptyPartitionKey := azcosmos.NewPartitionKey()
+
+	pager := container.NewQueryItemsPager(query, emptyPartitionKey, &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@param", Value: paramValue},
+		},
+	})
+
+	for pager.More() {
+		page, err := pager.NextPage(context.Background())
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Results for %s: %s\n", paramType, paramValue)
+		fmt.Println("==========================================")
+
+		for _, _item := range page.Items {
+			var queryResult QueryResult
+			err = json.Unmarshal(_item, &queryResult)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println("ID:", queryResult.ID)
+			fmt.Println("Tenant ID:", queryResult.TenantId)
+			fmt.Println("User ID:", queryResult.UserId)
 			fmt.Println("Session ID:", queryResult.SessionId)
 			fmt.Println("Activity:", queryResult.Activity)
 			fmt.Println("Timestamp:", queryResult.Timestamp)
