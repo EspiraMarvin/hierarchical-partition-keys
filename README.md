@@ -3,7 +3,7 @@
 ##### USECASES
 
 1. > Multitenant architecture application
-2. > Sharded systems (using a combination of both range based and hash algorithm sharding)
+2. > Sharded systems (using a combination of both range based and consistent hash algorithm sharding)
 
 ##### General rule of thumb:
 
