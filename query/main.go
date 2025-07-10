@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -60,6 +61,13 @@ func main() {
 	queryWithSinglePKParameter("tenantId", "Enterprise-Corp")
 	queryWithSinglePKParameter("userId", "user-42")
 	queryWithSinglePKParameter("sessionId", "session-0361ef4c")
+
+	// Query/Execute a point read operation
+	tenantID_ := "SmallBiz-LLC"
+	userID_ := "user-42"
+	sessionID_ := "session-0361ef4c"
+	id := "c0ba6ff6-a622-4b30-bcd3-b92960336976" // This should be the ID of the item you want to read
+	executePointRead(id, tenantID_, userID_, sessionID_)
 }
 
 // queryWithFullPartitionKey let`s you user the full partition key for querying
@@ -79,7 +87,7 @@ func queryWithFullPartitionKey(tenantID, userID, sessionID string) {
 	fmt.Println("Querying with full partition key:", pkFull)
 
 	for pager.More() {
-		page, err := page.NextPage(context.Background())
+		page, err := pager.NextPage(context.Background())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -106,14 +114,14 @@ func queryWithTenantAndUserID(tenantID, userID string) {
 	// since we don't have the full partition key, we use an empty partition key
 	emptyPartitionKey := azcosmos.NewPartitionKey()
 
-	page := container.NewQueryItemsPager(query, emptyPartitionKey, &azcosmos.QueryOptions{
+	pager := container.NewQueryItemsPager(query, emptyPartitionKey, &azcosmos.QueryOptions{
 		QueryParameters: []azcosmos.QueryParameter{
 			{Name: "@tenantId", Value: tenantID},
 			{Name: "@userId", Value: userID},
 		},
 	})
-	for page.More() {
-		page, err := page.NextPage(context.Background())
+	for pager.More() {
+		page, err := pager.NextPage(context.Background())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -180,6 +188,30 @@ func queryWithSinglePKParameter(paramType, paramValue string) {
 			fmt.Println("==========================================")
 		}
 	}
+}
+
+func executePointRead(id, tenantId, userId, sessionId string) {
+	// create a partition key using the full partition key values
+	pk := azcosmos.NewPartitionKeyString(tenantId).AppendString(userId).AppendString(sessionId)
+
+	// perform a point read operation
+	resp, err := container.ReadItem(context.Background(), pk, id, nil)
+	if err != nil {
+		log.Fatalf("Failed to read item: %v", err)
+	}
+
+	var queryResult QueryResult
+	err = json.Unmarshal(resp.Value, &queryResult)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	fmt.Println("Point Read Result for:", id, tenantId, userId, sessionId)
+
+	fmt.Println("Activity:", queryResult.Activity)
+	fmt.Println("Timestamp:", queryResult.Timestamp)
+
+	fmt.Println("RUs consumed:", resp.RequestCharge)
 }
 
 func getClient(endpoint string) (*azcosmos.Client, error) {
