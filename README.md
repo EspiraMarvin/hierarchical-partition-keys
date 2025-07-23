@@ -3,7 +3,7 @@
 ##### USE CASES
 
 1. > Multitenant architecture application
-2. > Sharded systems (using a combination of both range based sharding and consistent hashing algorithm to achieve it the sharding)
+2. > Sharded systems (using a combination of both range based sharding and consistent hashing algorithm to achieve sharding)
 
 ##### General rule of thumb:
 
@@ -27,6 +27,6 @@ export COSMOS_DB_ENDPOINT=https://your-account.documents.azure.com:443/
 export COSMOS_DB_DATABASE_NAME=<insert database name>
 export COSMOS_DB_CONTAINER_NAME=<insert container name>
 
-cd cosmosdb-go-hierarchical-partition-keys/query
+cd hierarchical-partition-keys/query
 go run main.go
 ```
